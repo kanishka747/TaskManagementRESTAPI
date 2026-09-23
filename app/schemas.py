@@ -1,40 +1,59 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Optional, List
-from app.models import TaskStatus
+
+class UserCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+    password: str = Field(..., min_length=6, max_length=100)
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    is_active: bool
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
 
 class TaskBase(BaseModel):
-    """Base schema for task creation/update"""
-    title: str = Field(..., min_length=1, max_length=200, description="Task title")
-    description: Optional[str] = Field(None, max_length=2000, description="Task description")
-    status: str = Field("pending", description="Task status: pending, in_progress, completed, cancelled")
-    priority: str = Field("medium", description="Priority: low, medium, high")
-    due_date: Optional[datetime] = Field(None, description="Task due date")
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
+    status: str = "pending"
+    priority: str = "medium"
+    due_date: Optional[datetime] = None
 
 class TaskCreate(TaskBase):
-    """Schema for creating a new task"""
     pass
 
 class TaskUpdate(TaskBase):
-    """Schema for updating a task"""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=2000)
-    status: Optional[str] = Field(None)
-    priority: Optional[str] = Field(None)
-    due_date: Optional[datetime] = Field(None)
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    due_date: Optional[datetime] = None
 
 class TaskResponse(TaskBase):
-    """Schema for task response"""
     id: int
+    user_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     is_active: bool = True
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TaskListResponse(BaseModel):
-    """Schema for paginated task list response"""
     total: int
     page: int
     page_size: int
@@ -42,5 +61,4 @@ class TaskListResponse(BaseModel):
     items: List[TaskResponse]
 
 class Message(BaseModel):
-    """Generic message response"""
     message: str

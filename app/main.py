@@ -1,15 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import tasks
-from app.models import Task
+from app.routes import tasks, auth
 from app.db import Base, engine
 
-# Create database tables
+# Create database tables (including users and tasks)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Task Management API",
-    description="A RESTful API for task management with CRUD operations",
+    description="A RESTful API for task management with CRUD operations and JWT User Authentication",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -26,6 +25,7 @@ app.add_middleware(
 )
 
 # Include routes
+app.include_router(auth.router, prefix="/api/v1")
 app.include_router(tasks.router, prefix="/api/v1")
 
 @app.get("/")

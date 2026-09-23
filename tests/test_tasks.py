@@ -21,14 +21,14 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
-
 @pytest.fixture(scope="function")
 def client():
     """Create test client"""
     Base.metadata.create_all(bind=engine)
+    app.dependency_overrides[get_db] = override_get_db
     client = TestClient(app)
     yield client
+    app.dependency_overrides.clear()
     Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture
@@ -42,12 +42,8 @@ def sample_task():
     }
 
 class TestTaskCRUD:
-    """Task CRUD operations test suite"""
-    
     def test_create_task(self, client, sample_task):
-        """Test task creation"""
         response = client.post("/api/v1/tasks/", json=sample_task)
-        
         assert response.status_code == 201
         data = response.json()
         assert data["title"] == sample_task["title"]
@@ -56,19 +52,15 @@ class TestTaskCRUD:
         assert "created_at" in data
     
     def test_create_task_validation(self, client):
-        """Test task creation with invalid data"""
         invalid_task = {
-            "title": "",  # Empty title
+            "title": "", 
             "status": "invalid_status"
         }
         response = client.post("/api/v1/tasks/", json=invalid_task)
-        assert response.status_code == 422  # Validation error
+        assert response.status_code == 422  
     
     def test_get_all_tasks(self, client, sample_task):
-        """Test getting all tasks"""
-        # Create a task first
         client.post("/api/v1/tasks/", json=sample_task)
-        
         response = client.get("/api/v1/tasks/")
         
         assert response.status_code == 200
@@ -79,30 +71,22 @@ class TestTaskCRUD:
         assert len(data["items"]) == 1
     
     def test_get_task_by_id(self, client, sample_task):
-        """Test getting task by ID"""
-        # Create task
         create_response = client.post("/api/v1/tasks/", json=sample_task)
         task_id = create_response.json()["id"]
         
-        # Get task
         response = client.get(f"/api/v1/tasks/{task_id}")
-        
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == task_id
     
     def test_get_task_not_found(self, client):
-        """Test getting non-existent task"""
         response = client.get("/api/v1/tasks/999")
         assert response.status_code == 404
     
     def test_update_task(self, client, sample_task):
-        """Test task update"""
-        # Create task
         create_response = client.post("/api/v1/tasks/", json=sample_task)
         task_id = create_response.json()["id"]
         
-        # Update task
         update_data = {
             "title": "Updated Title",
             "status": "in_progress"
@@ -115,23 +99,16 @@ class TestTaskCRUD:
         assert data["status"] == "in_progress"
     
     def test_delete_task(self, client, sample_task):
-        """Test task deletion"""
-        # Create task
         create_response = client.post("/api/v1/tasks/", json=sample_task)
         task_id = create_response.json()["id"]
         
-        # Delete task
         response = client.delete(f"/api/v1/tasks/{task_id}")
-        
         assert response.status_code == 200
         
-        # Verify deletion
         get_response = client.get(f"/api/v1/tasks/{task_id}")
         assert get_response.status_code == 404
     
     def test_task_statistics(self, client, sample_task):
-        """Test task statistics endpoint"""
-        # Create multiple tasks
         for i in range(5):
             task_data = sample_task.copy()
             task_data["title"] = f"Task {i}"
@@ -148,17 +125,12 @@ class TestTaskCRUD:
         assert "by_priority" in data
 
 class TestPagination:
-    """Pagination test suite"""
-    
     def test_pagination_skip_limit(self, client, sample_task):
-        """Test pagination with skip and limit"""
-        # Create multiple tasks
         for i in range(15):
             task_data = sample_task.copy()
             task_data["title"] = f"Task {i}"
             client.post("/api/v1/tasks/", json=task_data)
         
-        # Test pagination
         response = client.get("/api/v1/tasks/?skip=0&limit=5")
         
         assert response.status_code == 200
@@ -168,17 +140,12 @@ class TestPagination:
         assert data["total_pages"] == 3
 
 class TestFiltering:
-    """Filtering test suite"""
-    
     def test_filter_by_status(self, client, sample_task):
-        """Test filtering tasks by status"""
-        # Create tasks with different statuses
         client.post("/api/v1/tasks/", json=sample_task.copy())
         task2 = sample_task.copy()
         task2["status"] = "in_progress"
         client.post("/api/v1/tasks/", json=task2)
         
-        # Filter by status
         response = client.get("/api/v1/tasks/?status_filter=in_progress")
         
         assert response.status_code == 200
@@ -186,4 +153,3 @@ class TestFiltering:
         assert len(data["items"]) == 1
         assert data["items"][0]["status"] == "in_progress"
 
-# Run with: pytest tests/ -v --cov=app
