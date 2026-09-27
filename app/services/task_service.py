@@ -6,11 +6,8 @@ from typing import List, Optional
 from datetime import datetime
 
 class TaskService:
-    """Task business logic service layer"""
-    
     @staticmethod
     def create_task(db: Session, task: TaskCreate) -> Task:
-        """Create a new task"""
         db_task = Task(
             title=task.title,
             description=task.description,
@@ -25,7 +22,6 @@ class TaskService:
     
     @staticmethod
     def get_task(db: Session, task_id: int) -> Optional[Task]:
-        """Get a task by ID"""
         return db.query(Task).filter(Task.id == task_id, Task.is_active == True).first()
     
     @staticmethod
@@ -36,7 +32,6 @@ class TaskService:
         status: Optional[str] = None,
         priority: Optional[str] = None
     ) -> tuple[List[Task], int]:
-        """Get paginated tasks with optional filters"""
         query = db.query(Task).filter(Task.is_active == True)
         
         if status:
@@ -55,7 +50,6 @@ class TaskService:
         task_id: int,
         task_update: TaskUpdate
     ) -> Optional[Task]:
-        """Update an existing task"""
         db_task = TaskService.get_task(db, task_id)
         if not db_task:
             return None
@@ -71,7 +65,6 @@ class TaskService:
     
     @staticmethod
     def delete_task(db: Session, task_id: int) -> bool:
-        """Soft delete a task"""
         db_task = TaskService.get_task(db, task_id)
         if not db_task:
             return False
@@ -82,7 +75,6 @@ class TaskService:
     
     @staticmethod
     def get_task_statistics(db: Session) -> dict:
-        """Get task statistics"""
         total = db.query(func.count(Task.id)).filter(Task.is_active == True).scalar()
         by_status = db.query(Task.status, func.count(Task.id)) \
             .filter(Task.is_active == True) \
@@ -96,3 +88,4 @@ class TaskService:
             "by_status": dict(by_status),
             "by_priority": dict(by_priority)
         }
+

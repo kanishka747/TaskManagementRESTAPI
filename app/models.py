@@ -2,13 +2,6 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Foreign
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db import Base
-from enum import Enum as PyEnum
-
-class TaskStatus(PyEnum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
 
 class User(Base):
     __tablename__ = "users"
