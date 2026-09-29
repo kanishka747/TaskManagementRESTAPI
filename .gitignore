@@ -7,3 +7,6 @@ htmlcov/
 .coverage
 *.sqlite3
 .DS_Store
+*.pdf
+Task_Management_*.md
+screenshots/
